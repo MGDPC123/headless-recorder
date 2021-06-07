@@ -1,6 +1,8 @@
+import { v4 as uuidv4 } from 'uuid'
 import pptrActions from '../code-generator/pptr-actions'
 import ctrl from '../models/extension-control-messages'
 import actions from '../models/extension-ui-actions'
+import axios from 'axios'
 
 class RecordingController {
   constructor () {
@@ -12,6 +14,7 @@ class RecordingController {
     this._boundedKeyCommandHandler = null
     this._badgeState = ''
     this._isPaused = false
+    this._isROI=false
 
     // Some events are sent double on page navigations to simplify the event recorder.
     // We keep some simple state to disregard events if needed.
@@ -99,9 +102,24 @@ class RecordingController {
   }
 
   stop () {
+
     console.debug('stop recording')
+
     this._badgeState = this._recording.length > 0 ? '1' : ''
 
+    this.transformIntoDPCformat()
+
+    chrome.storage.local.set({ recording: this._recording }, () => {
+      console.debug('recording stored')
+      this.finishStopping()
+    })
+    chrome.storage.local.set({ dpcRecording: this._recording }, () => {
+      console.debug('DPC recording stored')
+    })
+
+  }
+
+  finishStopping(){
     chrome.runtime.onMessage.removeListener(this._boundedMessageHandler)
     chrome.webNavigation.onCompleted.removeListener(this._boundedNavigationHandler)
     chrome.webNavigation.onBeforeNavigate.removeListener(this._boundedWaitHandler)
@@ -110,10 +128,66 @@ class RecordingController {
     chrome.browserAction.setIcon({ path: './images/icon-black.png' })
     chrome.browserAction.setBadgeText({text: this._badgeState})
     chrome.browserAction.setBadgeBackgroundColor({color: '#45C8F1'})
+  }
 
-    chrome.storage.local.set({ recording: this._recording }, () => {
-      console.debug('recording stored')
-    })
+  transformIntoDPCformat () {
+    const browserId = uuidv4()
+
+    const result = this._recording.reduce((cur, next) => {
+      if (next.action === 'keydown' || next.action === 'change') {
+        if (!cur[cur.length - 1] || cur[cur.length - 1].Command !== 'TypeText') {
+          cur.push({
+            Command: this._isROI ? 'Roi' : 'TypeText',
+            Data: {
+              InsertedText: next.value,
+              BrowserAction: {
+                Selectors: next.selectors,
+                BrowserId: browserId,
+                BrowserUrl: next.frameUrl,
+                Screenshot: next.screenshot,
+                Date: next.createdAt
+              }
+            }
+          })
+        } else if (cur[cur.length - 1].Command === 'TypeText') {
+          cur[cur.length - 1].Data.InsertedText = next.value
+        }
+      } else if (next.action === 'click') {
+        cur.push({
+          Command: 'Click',
+          Data: {
+            ClickCommand: 'LeftClick',
+            BrowserAction: {
+              Selectors: next.selectors.filter(sel => sel !== null),
+              BrowserId: browserId,
+              BrowserUrl: next.frameUrl,
+              Screenshot: next.screenshot,
+              Date: next.createdAt
+            }
+          }
+        })
+      } else if (next.action === 'GOTO') {
+        cur.push({
+          Command: 'OpenBrowser',
+          Data: {
+            BrowserType: 'Chrome',
+            BrowserVersion: '1',
+            StartUrl: next.href,
+            BrowserId: browserId,
+            Screenshot: next.screenshot,
+            Date: next.createdAt
+          }
+        })
+      }
+
+      return cur
+    }, [])
+
+    this._recording = [
+      {'Name': 'Nazwa nagrania',
+      'Version': '1.0',
+      'Steps': result}
+    ]
   }
 
   pause () {
@@ -132,7 +206,7 @@ class RecordingController {
 
   cleanUp (cb) {
     console.debug('cleanup')
-    this._recording = []
+    //this._recording = []
     chrome.browserAction.setBadgeText({ text: '' })
     chrome.storage.local.remove('recording', () => {
       console.debug('stored recording cleared')
@@ -164,6 +238,14 @@ class RecordingController {
   }
 
   handleMessage (msg, sender) {
+    if(msg && msg.action==='toogleROI'){
+      this._isROI=msg.value
+      return
+    }
+
+    if(!Array.isArray(this._recording)){
+      this._recording=[]
+    }
     if (msg.control) return this.handleControlMessage(msg, sender)
 
     // to account for clicks etc. we need to record the frameId and url to later target the frame in playback
@@ -171,6 +253,14 @@ class RecordingController {
     msg.frameUrl = sender ? sender.url : null
 
     if (!this._isPaused) {
+      if (!msg.screenshot) {
+        chrome.tabs.captureVisibleTab(uri => {
+          if (!msg.screenshot) {
+            msg.screenshot = uri
+          }
+        })
+      }
+
       this._recording.push(msg)
       chrome.storage.local.set({ recording: this._recording }, () => {
         console.debug('stored recording updated')

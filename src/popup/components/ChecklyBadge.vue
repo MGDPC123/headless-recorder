@@ -1,11 +1,3 @@
-<template functional>
-  <div class="checkly-badge text-muted">
-    powered by
-    <a href="https://checklyhq.com" target="_blank">
-      <img src="/images/text_racoon_logo.svg" alt="Checkly logo">
-    </a>
-  </div>
-</template>
 
 <script>
   export default {

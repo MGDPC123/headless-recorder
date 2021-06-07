@@ -2,7 +2,7 @@
   <div class="options">
     <div class="container">
       <div class="header">
-        Headless Recorder Options
+        DPC Recorder Options
         <small class="saving-badge text-muted" v-show="saving">
           Saving...
         </small>
@@ -18,7 +18,6 @@
               <input id="options-code-dataAttribute" type="text" v-model.trim="options.code.dataAttribute" @change="save" placeholder="your custom data-* attribute">
               <small>Define an attribute that we'll attempt to use when selecting the elements, i.e "data-custom". This is handy
                 when React or Vue based apps generate random class names.</small>
-              <small class="settings-warning">⚠️ When data attribute is set, it will take precedence from over other any selector (even ID)</small>
             </div>
             <div class="settings-group">
               <label class="settings-label">set key code</label>
@@ -32,68 +31,22 @@
         </div>
         <div class="settings-block">
           <h4 class="settings-block-title">
-            Code Generator settings
+
+            Remote recording server settings
           </h4>
           <div class="settings-block-main">
             <div class="settings-group">
               <label>
-                <input id="options-code-wrapAsync" type="checkbox" v-model="options.code.wrapAsync" @change="save">
-                Wrap code in async function
-              </label>
-            </div>
-            <div class="settings-group">
-              <label>
-                <input id="options-code-headless" type="checkbox" v-model="options.code.headless" @change="save">
-                Set <code>headless</code> in puppeteer launch options
-              </label>
-            </div>
-            <div class="settings-group">
-              <label>
-                <input id="options-code-waitForNavigation" type="checkbox" v-model="options.code.waitForNavigation" @change="save">
-                Add <code>waitForNavigation</code> lines on navigation
-              </label>
-            </div>
-            <div class="settings-group">
-              <label>
-                <input id="options-code-waitForSelectorOnClick" type="checkbox" v-model="options.code.waitForSelectorOnClick" @change="save">
-                Add <code>waitForSelector</code> lines before every <code>page.click()</code>
-              </label>
-            </div>
-            <div class="settings-group">
-              <label>
-                <input id="options-code-blankLinesBetweenBlocks" type="checkbox" v-model="options.code.blankLinesBetweenBlocks" @change="save">
-                Add blank lines between code blocks
-              </label>
-            </div>
-            <div class="settings-group">
-              <label>
-                <input id="options-code-showPlaywrightFirst" type="checkbox" v-model="options.code.showPlaywrightFirst" @change="save">
-                Show Playwright tab first
-              </label>
-            </div>
-          </div>
-        </div>
-        <div class="settings-block">
-          <h4 class="settings-block-title">
-            Extension settings
-          </h4>
-          <div class="settings-block-main">
-            <div class="settings-group">
-              <label>
-                <input id="options-telemetry" type="checkbox" v-model="options.extension.telemetry" @change="save">
-                Allow recording of usage telemetry
+                <input id="options-remote-server-endpoint" type="text" v-model.number="options.remoteServer" />
+
+                Type in the address of the remote server which will be used to gather the data
+
               </label>
               <br>
-              <small>We only record clicks for basic product development, no website content or input data. Data is never, ever shared with 3rd parties.</small>
+              <button class="btn btn-sm btn-primary" @click="save">Save</button>
             </div>
           </div>
         </div>
-      </div>
-      <div class="footer">
-        sponsored by
-        <a href="https://checklyhq.com" target="_blank">
-          <img src="/images/text_racoon_logo.svg" alt="">
-        </a>
       </div>
     </div>
   </div>
@@ -104,8 +57,9 @@
 
   const defaults = {
     code,
+    remoteServer: "http://localhost:5000",
     extension: {
-      telemetry: true
+      telemetry: false
     }
   }
 
@@ -216,20 +170,11 @@
           margin-bottom: $spacer;
         }
 
-        .settings-warning {
-          display: block;
-          font-size: .75rem;
-          font-weight: 500;
-          color: $pink;
-          margin: $spacer 0;
-        }
-
         .settings-block-title {
           margin: 0;
           padding-bottom: $spacer;
           border-bottom: 1px solid $gray-light;
         }
-
         .settings-block-main {
           padding: $spacer 0;
           margin-bottom: $spacer;

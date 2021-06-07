@@ -3,8 +3,11 @@ import UIController from './UIController'
 import actions from '../models/extension-ui-actions'
 import ctrl from '../models/extension-control-messages'
 import finder from '@medv/finder'
+import xpath from 'xpath-dom'
+import LocatorBuilders from '../other/locatorBuilders'
 
 const DEFAULT_MOUSE_CURSOR = 'default'
+const locatorBuilders = new LocatorBuilders(window)
 
 export default class EventRecorder {
   constructor () {
@@ -99,17 +102,31 @@ export default class EventRecorder {
 
     // we explicitly catch any errors and swallow them, as none node-type events are also ingested.
     // for these events we cannot generate selectors, which is OK
-    try {
-      this._sendMessage({
-        selector: this._getSelector(e),
+     try {
+    //   const optimizedMinLength = (e.target.id) ? 2 : 10 // if the target has an id, use that instead of multiple other selectors
+    //   const cssDefaultSelector = this._dataAttribute
+    //     ? finder(e.target, {seedMinLength: 5, optimizedMinLength: optimizedMinLength, attr: (name, _value) => name === this._dataAttribute})
+    //     : finder(e.target, {seedMinLength: 5, optimizedMinLength: optimizedMinLength})
+
+      const locators = locatorBuilders.buildAll(e.target)
+
+      if(!locators || locators.length===0){
+        return;
+      }
+
+      const msg = {
+        selector: locators[0],
         value: e.target.value,
         tagName: e.target.tagName,
         action: e.type,
         keyCode: e.keyCode ? e.keyCode : null,
         href: e.target.href ? e.target.href : null,
-        coordinates: EventRecorder._getCoordinates(e)
-      })
-    } catch (e) {}
+        coordinates: EventRecorder._getCoordinates(e),
+        createdAt: new Date().toISOString(),
+        selectors: locators
+      }
+      this._sendMessage(msg)
+    } catch (e) { }
   }
 
   _getEventLog () {
@@ -150,22 +167,6 @@ export default class EventRecorder {
     this._isRecordingClicks = true
   }
 
-  _getSelector (e) {
-    if (this._dataAttribute && e.target.getAttribute(this._dataAttribute)) {
-      return `[${this._dataAttribute}="${e.target.getAttribute(this._dataAttribute)}"]`
-    }
-
-    if (e.target.id) {
-      return `#${e.target.id}`
-    }
-
-    return finder(e.target, {
-      seedMinLength: 5,
-      optimizedMinLength: (e.target.id) ? 2 : 10,
-      attr: (name, _value) => name === this._dataAttribute
-    })
-  }
-
   static _getCoordinates (evt) {
     const eventsWithCoordinates = {
       mouseup: true,
@@ -174,5 +175,9 @@ export default class EventRecorder {
       mouseover: true
     }
     return eventsWithCoordinates[evt.type] ? { x: evt.clientX, y: evt.clientY } : null
+  }
+
+  static _formatDataSelector (element, attribute) {
+    return `[${attribute}="${element.getAttribute(attribute)}"]`
   }
 }

@@ -5,9 +5,7 @@
         <img src="/images/Desert.svg" alt="desert" width="78px">
         <h3>No recorded events yet</h3>
         <p class="text-muted">Click record to begin</p>
-        <div class="nag-cta" v-show="!isRecording">
-          <a href="https://checklyhq.com/headless-recorder" target="_blank">Puppeteer Recorder is now <strong>Headless Recorder</strong> and supports Playwright →</a>
-        </div>
+
       </div>
       <div class="events" v-show="isRecording">
         <p class="text-muted text-center loading" v-show="liveEvents.length === 0">Waiting for events</p>

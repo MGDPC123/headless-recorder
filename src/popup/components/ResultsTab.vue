@@ -9,19 +9,16 @@
     </div>
 
     <div class="content">
-      <pre v-if="code()" v-highlightjs="code()">
+      <div v-highlightjs="code()">
+
         <code class="javascript"></code>
-      </pre>
-      <pre v-else>
-        <code>No code yet...</code>
-      </pre>
+      </div>
     </div>
   </div>
 </template>
 <script>
 export const TYPE = {
-  PUPPETEER: 'puppeteer',
-  PLAYWRIGHT: 'playwright'
+    RECORDINGRESULT: 'Recording result'
 }
 
 export default {
@@ -35,6 +32,10 @@ export default {
       type: String, 
       default: ''
     },
+    recordingResult: {
+      type: String, 
+      default: ''
+    },
     options: {
       type: Object,
       default: () => ({})
@@ -42,20 +43,22 @@ export default {
   },
   data () {
     return {
-      activeTab: TYPE.PUPPETEER,
-      tabs: [TYPE.PUPPETEER, TYPE.PLAYWRIGHT]
+      activeTab: TYPE.RECORDINGRESULT,
+      tabs: [TYPE.RECORDINGRESULT]
     }
   },
   mounted() {
-    if (this.options && this.options.code && this.options.code.showPlaywrightFirst) {
-      this.activeTab = TYPE.PLAYWRIGHT
-      this.tabs = this.tabs.reverse()
-    }
+    this.activeTab = TYPE.RECORDINGRESULT
+
+    //if (this.options && this.options.code && this.options.code.showPlaywrightFirst) {
+    //  this.activeTab = TYPE.PLAYWRIGHT
+    //  this.tabs = this.tabs.reverse()
+    //}
     this.$emit('update:tab', this.activeTab)
   },
   methods: {
     code() {
-      return this.activeTab === TYPE.PUPPETEER ? this.puppeteer : this.playwright
+      return this.playwright
     },
     changeTab(tab) {
       this.activeTab = tab

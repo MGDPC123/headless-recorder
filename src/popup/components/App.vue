@@ -2,7 +2,8 @@
   <div id="headless-recorder" class="recorder">
     <div class="header">
       <a href="#" @click="goHome">
-        Headless recorder <span class="text-muted"><small>{{version}}</small></span>
+        DPC recorder <span class="text-muted"><small>{{version}}</small></span>
+
       </a>
       <div class="left">
         <div class="recording-badge" v-show="isRecording">
@@ -20,6 +21,7 @@
     <div class="main">
       <div class="tabs" v-show="!showHelp">
         <RecordingTab :code="code" :is-recording="isRecording" :live-events="liveEvents" v-show="!showResultsTab"/>
+
         <div class="recording-footer" v-show="!showResultsTab">
           <button class="btn btn-sm" @click="toggleRecord" :class="isRecording ? 'btn-danger' : 'btn-primary'">
             {{recordButtonText}}
@@ -28,15 +30,22 @@
             {{pauseButtonText}}
           </button>
           <a href="#" @click="showResultsTab = true" v-show="code">view code</a>
-          <checkly-badge v-if="!isRecording"></checkly-badge>
         </div>
-        <ResultsTab :puppeteer="code" :playwright="codeForPlaywright" :options="options" v-if="showResultsTab" v-on:update:tab="currentResultTab = $event" />
-        <div class="results-footer" v-show="showResultsTab">
-          <button class="btn btn-sm btn-primary" @click="restart" v-show="code">Restart</button>
-          <a href="#" v-clipboard:copy="getCodeForCopy()" @click.prevent="setCopying" v-show="code">{{copyLinkText}}</a>
+        <ResultsTab :puppeteer="recordingInJson" :playwright="recordingInJson" :options="options" v-if="showResultsTab" />
+
+        <div class="results-footer" v-if="showResultsTab">
+          <button class="btn btn-sm btn-primary" @click="restart">Restart</button>
+          <button class="btn btn-sm btn-primary" @click="sendToServer">Send to server</button>
+
+          <a href="#" v-clipboard:copy="getCodeForCopy()" @click.prevent="setCopying">{{copyLinkText}}</a>
         </div>
       </div>
-      <HelpTab v-show="showHelp"></HelpTab>
+      <div class="results-footer">
+          <label>
+            Region of intereset (ROI):
+            <input type="checkbox" v-model="isROI" @change="toogleROI" />
+          </label>
+        </div>
     </div>
   </div>
 </template>
@@ -54,9 +63,10 @@
 
 export default {
     name: 'App',
-    components: { ResultsTab, RecordingTab, HelpTab, ChecklyBadge },
+    components: { ResultsTab, RecordingTab, HelpTab },
     data () {
       return {
+        recordingInJson: '',
         code: '',
         codeForPlaywright: '',
         options: {},
@@ -67,6 +77,7 @@ export default {
         isRecording: false,
         isPaused: false,
         isCopying: false,
+        isROI: false,
         bus: null,
         version,
         currentResultTab: null
@@ -74,12 +85,12 @@ export default {
     },
     mounted () {
       this.loadState(() => {
-        this.trackPageView()
         if (this.isRecording) {
           console.debug('opened in recording state, fetching recording events')
-          this.$chrome.storage.local.get(['recording', 'options'], ({ recording }) => {
+          this.$chrome.storage.local.get(['recording', 'options', 'isROI'], ({ recording, isROI }) => {
             console.debug('loaded recording', recording)
             this.liveEvents = recording
+            this.isROI=isROI
           })
         }
 
@@ -110,35 +121,37 @@ export default {
         this.storeState()
       },
       start () {
-        this.trackEvent('Start')
         this.cleanUp()
         console.debug('start recorder')
         this.bus.postMessage({ action: actions.START })
       },
       stop () {
-        this.trackEvent('Stop')
         console.debug('stop recorder')
         this.bus.postMessage({ action: actions.STOP })
 
-        this.$chrome.storage.local.get(['recording', 'options'], ({ recording, options }) => {
+        this.$chrome.storage.local.get(['dpcRecording', 'recording', 'options'], ({dpcRecording, recording, options }) => {
           console.debug('loaded recording', recording)
           console.debug('loaded options', options)
 
-          this.recording = recording
-          const codeOptions = options ? options.code : {}
+          this.recording = JSON.stringify(dpcRecording)
+          //const codeOptions = options ? options.code : {}
 
-          const codeGen = new PuppeteerCodeGenerator(codeOptions)
-          const codeGenPlaywright = new PlaywrightCodeGenerator(codeOptions)
-          this.code = codeGen.generate(this.recording)
-          this.codeForPlaywright = codeGenPlaywright.generate(this.recording)
+          this.recordingInJson=JSON.stringify(dpcRecording)
+          //const codeGen = new PuppeteerCodeGenerator(codeOptions)
+          //const codeGenPlaywright = new PlaywrightCodeGenerator(codeOptions)
+          this.code = this.dpcRecording //codeGen.generate(this.recording)
+          this.codeForPlaywright = this.dpcRecording //codeGenPlaywright.generate(this.recording)
           this.showResultsTab = true
-          this.storeState()
+          //this.storeState()
         })
       },
       restart () {
         console.log('restart')
         this.cleanUp()
         this.bus.postMessage({ action: actions.CLEAN_UP })
+      },
+      sendToServer () {
+        alert('sending to server...')
       },
       cleanUp () {
         this.recording = this.liveEvents = []
@@ -148,7 +161,6 @@ export default {
         this.storeState()
       },
       openOptions () {
-        this.trackEvent('Options')
         if (this.$chrome.runtime.openOptionsPage) {
           this.$chrome.runtime.openOptionsPage()
         }
@@ -185,7 +197,6 @@ export default {
         })
       },
       setCopying () {
-        this.trackEvent('Copy')
         this.isCopying = true
         setTimeout(() => { this.isCopying = false }, 1500)
       },
@@ -194,21 +205,19 @@ export default {
         this.showHelp = false
       },
       toggleShowHelp () {
-        this.trackEvent('Help')
         this.showHelp = !this.showHelp
       },
-      trackEvent (event) {
-        if (this.options && this.options.extension && this.options.extension.telemetry) {
-          if (window._gaq) window._gaq.push(['_trackEvent', event, 'clicked'])
-        }
-      },
-      trackPageView () {
-        if (this.options && this.options.extension && this.options.extension.telemetry) {
-          if (window._gaq) window._gaq.push(['_trackPageview'])
-        }
-      },
       getCodeForCopy () {
-        return this.currentResultTab === 'puppeteer' ? this.code : this.codeForPlaywright
+        return this.recordingInJson
+      },
+      toogleROI(){
+        chrome.runtime.sendMessage({
+          action: 'toogleROI',
+          value: this.isROI
+        })
+      this.$chrome.storage.local.set({
+          isROI: this.isROI
+        })
       }
     },
     computed: {
