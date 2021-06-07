@@ -3,6 +3,7 @@ import pptrActions from '../code-generator/pptr-actions'
 import ctrl from '../models/extension-control-messages'
 import actions from '../models/extension-ui-actions'
 import axios from 'axios'
+import platform from 'platform'
 
 class RecordingController {
   constructor () {
@@ -170,8 +171,8 @@ class RecordingController {
         cur.push({
           Command: 'OpenBrowser',
           Data: {
-            BrowserType: 'Chrome',
-            BrowserVersion: '1',
+            BrowserType: platform.name,
+            BrowserVersion: platform.version,
             StartUrl: next.href,
             BrowserId: browserId,
             Screenshot: next.screenshot,
