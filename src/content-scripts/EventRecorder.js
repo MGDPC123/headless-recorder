@@ -100,18 +100,11 @@ export default class EventRecorder {
     if (this._previousEvent && this._previousEvent.timeStamp === e.timeStamp) return
     this._previousEvent = e
 
-    // we explicitly catch any errors and swallow them, as none node-type events are also ingested.
-    // for these events we cannot generate selectors, which is OK
-     try {
-    //   const optimizedMinLength = (e.target.id) ? 2 : 10 // if the target has an id, use that instead of multiple other selectors
-    //   const cssDefaultSelector = this._dataAttribute
-    //     ? finder(e.target, {seedMinLength: 5, optimizedMinLength: optimizedMinLength, attr: (name, _value) => name === this._dataAttribute})
-    //     : finder(e.target, {seedMinLength: 5, optimizedMinLength: optimizedMinLength})
-
+    try {
       const locators = locatorBuilders.buildAll(e.target)
 
       if(!locators || locators.length===0){
-        return;
+        console.log('empty selectors')
       }
 
       const msg = {
@@ -120,10 +113,11 @@ export default class EventRecorder {
         tagName: e.target.tagName,
         action: e.type,
         keyCode: e.keyCode ? e.keyCode : null,
-        href: e.target.href ? e.target.href : null,
+        href: window.location.href,
         coordinates: EventRecorder._getCoordinates(e),
         createdAt: new Date().toISOString(),
         selectors: locators
+
       }
       this._sendMessage(msg)
     } catch (e) { }

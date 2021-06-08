@@ -15,7 +15,7 @@ class RecordingController {
     this._boundedKeyCommandHandler = null
     this._badgeState = ''
     this._isPaused = false
-    this._isROI=false
+    this._isROI = false
 
     // Some events are sent double on page navigations to simplify the event recorder.
     // We keep some simple state to disregard events if needed.
@@ -135,16 +135,31 @@ class RecordingController {
     const browserId = uuidv4()
 
     const result = this._recording.reduce((cur, next) => {
+      if(this._isROI){
+        cur.push({
+          Command: 'Roi',
+          Data: {
+            InsertedText: next.value,
+            BrowserAction: {
+              Selectors: next.selectors,
+              BrowserId: browserId,
+              BrowserUrl: next.href,
+              Screenshot: next.screenshot,
+              Date: next.createdAt
+            }
+          }
+        })
+      }
       if (next.action === 'keydown' || next.action === 'change') {
         if (!cur[cur.length - 1] || cur[cur.length - 1].Command !== 'TypeText') {
           cur.push({
-            Command: this._isROI ? 'Roi' : 'TypeText',
+            Command: 'TypeText',
             Data: {
               InsertedText: next.value,
               BrowserAction: {
                 Selectors: next.selectors,
                 BrowserId: browserId,
-                BrowserUrl: next.frameUrl,
+                BrowserUrl: next.href,
                 Screenshot: next.screenshot,
                 Date: next.createdAt
               }
@@ -161,7 +176,7 @@ class RecordingController {
             BrowserAction: {
               Selectors: next.selectors.filter(sel => sel !== null),
               BrowserId: browserId,
-              BrowserUrl: next.frameUrl,
+              BrowserUrl: next.href,
               Screenshot: next.screenshot,
               Date: next.createdAt
             }
