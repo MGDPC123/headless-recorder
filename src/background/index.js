@@ -103,7 +103,6 @@ class RecordingController {
   }
 
   stop () {
-
     console.debug('stop recording')
 
     this._badgeState = this._recording.length > 0 ? '1' : ''
@@ -117,25 +116,24 @@ class RecordingController {
     chrome.storage.local.set({ dpcRecording: this._recording }, () => {
       console.debug('DPC recording stored')
     })
-
   }
 
-  finishStopping(){
+  finishStopping () {
     chrome.runtime.onMessage.removeListener(this._boundedMessageHandler)
     chrome.webNavigation.onCompleted.removeListener(this._boundedNavigationHandler)
     chrome.webNavigation.onBeforeNavigate.removeListener(this._boundedWaitHandler)
     chrome.contextMenus.onClicked.removeListener(this._boundedMenuHandler)
 
     chrome.browserAction.setIcon({ path: './images/icon-black.png' })
-    chrome.browserAction.setBadgeText({text: this._badgeState})
-    chrome.browserAction.setBadgeBackgroundColor({color: '#45C8F1'})
+    chrome.browserAction.setBadgeText({ text: this._badgeState })
+    chrome.browserAction.setBadgeBackgroundColor({ color: '#45C8F1' })
   }
 
   transformIntoDPCformat () {
-    const browserId = uuidv4()
+    // const browserId = uuidv4()
 
     const result = this._recording.reduce((cur, next) => {
-      if(this._isROI){
+      /* if (this._isROI) {
         cur.push({
           Command: 'Roi',
           Data: {
@@ -149,7 +147,7 @@ class RecordingController {
             }
           }
         })
-      }
+      } */
       if (next.action === 'keydown' || next.action === 'change') {
         if (!cur[cur.length - 1] || cur[cur.length - 1].Command !== 'TypeText') {
           cur.push({
@@ -158,7 +156,7 @@ class RecordingController {
               InsertedText: next.value,
               BrowserAction: {
                 Selectors: next.selectors,
-                BrowserId: browserId,
+                BrowserId: next.tabID,
                 BrowserUrl: next.href,
                 Screenshot: next.screenshot,
                 Date: next.createdAt
@@ -175,7 +173,7 @@ class RecordingController {
             ClickCommand: 'LeftClick',
             BrowserAction: {
               Selectors: next.selectors.filter(sel => sel !== null),
-              BrowserId: browserId,
+              BrowserId: next.tabID,
               BrowserUrl: next.href,
               Screenshot: next.screenshot,
               Date: next.createdAt
@@ -189,7 +187,7 @@ class RecordingController {
             BrowserType: platform.name,
             BrowserVersion: platform.version,
             StartUrl: next.href,
-            BrowserId: browserId,
+            BrowserId: next.tabID,
             Screenshot: next.screenshot,
             Date: next.createdAt
           }
@@ -200,9 +198,9 @@ class RecordingController {
     }, [])
 
     this._recording = [
-      {'Name': 'Nazwa nagrania',
-      'Version': '1.0',
-      'Steps': result}
+      { 'Name': 'Nazwa nagrania',
+        'Version': '1.0',
+        'Steps': result }
     ]
   }
 
@@ -222,7 +220,7 @@ class RecordingController {
 
   cleanUp (cb) {
     console.debug('cleanup')
-    //this._recording = []
+    // this._recording = []
     chrome.browserAction.setBadgeText({ text: '' })
     chrome.storage.local.remove('recording', () => {
       console.debug('stored recording cleared')
@@ -233,14 +231,14 @@ class RecordingController {
   recordCurrentUrl (href) {
     if (!this._hasGoto) {
       console.debug('recording goto* for:', href)
-      this.handleMessage({selector: undefined, value: undefined, action: pptrActions.GOTO, href})
+      this.handleMessage({ selector: undefined, value: undefined, action: pptrActions.GOTO, href })
       this._hasGoto = true
     }
   }
 
   recordCurrentViewportSize (value) {
     if (!this._hasViewPort) {
-      this.handleMessage({selector: undefined, value, action: pptrActions.VIEWPORT})
+      this.handleMessage({ selector: undefined, value, action: pptrActions.VIEWPORT })
       this._hasViewPort = true
     }
   }
@@ -254,13 +252,13 @@ class RecordingController {
   }
 
   handleMessage (msg, sender) {
-    if(msg && msg.action==='toogleROI'){
-      this._isROI=msg.value
+    if (msg && msg.action === 'toogleROI') {
+      this._isROI = msg.value
       return
     }
 
-    if(!Array.isArray(this._recording)){
-      this._recording=[]
+    if (!Array.isArray(this._recording)) {
+      this._recording = []
     }
     if (msg.control) return this.handleControlMessage(msg, sender)
 
@@ -324,7 +322,7 @@ class RecordingController {
 
   toggleScreenShotMode (action) {
     console.debug('toggling screenshot mode')
-    chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       chrome.tabs.sendMessage(tabs[0].id, { action })
     })
   }
