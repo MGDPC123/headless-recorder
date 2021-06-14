@@ -1,8 +1,6 @@
-import { v4 as uuidv4 } from 'uuid'
 import pptrActions from '../code-generator/pptr-actions'
 import ctrl from '../models/extension-control-messages'
 import actions from '../models/extension-ui-actions'
-import axios from 'axios'
 import platform from 'platform'
 
 class RecordingController {
@@ -156,7 +154,7 @@ class RecordingController {
               InsertedText: next.value,
               BrowserAction: {
                 Selectors: next.selectors,
-                BrowserId: next.tabID,
+                BrowserId: next.browserId,
                 BrowserUrl: next.href,
                 Screenshot: next.screenshot,
                 Date: next.createdAt
@@ -173,7 +171,7 @@ class RecordingController {
             ClickCommand: 'LeftClick',
             BrowserAction: {
               Selectors: next.selectors.filter(sel => sel !== null),
-              BrowserId: next.tabID,
+              BrowserId: next.browserId,
               BrowserUrl: next.href,
               Screenshot: next.screenshot,
               Date: next.createdAt
@@ -187,7 +185,7 @@ class RecordingController {
             BrowserType: platform.name,
             BrowserVersion: platform.version,
             StartUrl: next.href,
-            BrowserId: next.tabID,
+            BrowserId: next.browserId,
             Screenshot: next.screenshot,
             Date: next.createdAt
           }
