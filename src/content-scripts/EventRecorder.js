@@ -2,8 +2,6 @@ import eventsToRecord from '../code-generator/dom-events-to-record'
 import UIController from './UIController'
 import actions from '../models/extension-ui-actions'
 import ctrl from '../models/extension-control-messages'
-import finder from '@medv/finder'
-import xpath from 'xpath-dom'
 import LocatorBuilders from '../other/locatorBuilders'
 
 const DEFAULT_MOUSE_CURSOR = 'default'
@@ -24,7 +22,7 @@ export default class EventRecorder {
   boot () {
     // We need to check the existence of chrome for testing purposes
     if (chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['options'], ({options}) => {
+      chrome.storage.local.get(['options'], ({ options }) => {
         const { dataAttribute } = options ? options.code : {}
         if (dataAttribute) {
           this._dataAttribute = dataAttribute
@@ -95,7 +93,20 @@ export default class EventRecorder {
       console.debug('caught error', err)
     }
   }
-
+  _defineTabID () {
+    var iPageTabID = sessionStorage.getItem('tabID')
+    // if it is the first time that this page is loaded
+    if (iPageTabID == null) {
+      var iLocalTabID = localStorage.getItem('tabID')
+      // if tabID is not yet defined in localStorage it is initialized to 1
+      // else tabId counter is increment by 1
+      iPageTabID = (iLocalTabID == null) ? 1 : Number(iLocalTabID) + 1
+      // new computed value are saved in localStorage and in sessionStorage
+      localStorage.setItem('tabID', iPageTabID)
+      sessionStorage.setItem('tabID', iPageTabID)
+    }
+    return iPageTabID
+  }
   _recordEvent (e) {
     if (this._previousEvent && this._previousEvent.timeStamp === e.timeStamp) return
     this._previousEvent = e
@@ -103,10 +114,24 @@ export default class EventRecorder {
     try {
       const locators = locatorBuilders.buildAll(e.target)
 
-      if(!locators || locators.length===0){
+      if (!locators || locators.length === 0) {
         console.log('empty selectors')
       }
+      let tabID = 0
 
+      var iPageTabID = sessionStorage.getItem('tabID')
+      // if it is the first time that this page is loaded
+      if (iPageTabID == null) {
+        var iLocalTabID = localStorage.getItem('tabID')
+        // if tabID is not yet defined in localStorage it is initialized to 1
+        // else tabId counter is increment by 1
+        iPageTabID = (iLocalTabID == null) ? 1 : Number(iLocalTabID) + 1
+        // new computed value are saved in localStorage and in sessionStorage
+        localStorage.setItem('tabID', iPageTabID)
+        sessionStorage.setItem('tabID', iPageTabID)
+        tabID = iPageTabID
+      }
+      console.log(tabID)
       const msg = {
         selector: locators[0],
         value: e.target.value,
@@ -116,8 +141,8 @@ export default class EventRecorder {
         href: window.location.href,
         coordinates: EventRecorder._getCoordinates(e),
         createdAt: new Date().toISOString(),
-        selectors: locators
-
+        selectors: locators,
+        browserId: tabID
       }
       this._sendMessage(msg)
     } catch (e) { }
