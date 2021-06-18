@@ -70,6 +70,7 @@
     "jest": "^23.5.0",
     "jest-vue-preprocessor": "^1.4.0",
     "lodash": "^4.17.19",
+    "ndb": "1.1.5",
     "node-sass": "^4.14.1",
     "pre-commit": "^1.2.2",
     "puppeteer": "^2.1.1",

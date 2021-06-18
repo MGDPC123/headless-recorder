@@ -24,7 +24,7 @@ export default class EventRecorder {
   boot () {
     // We need to check the existence of chrome for testing purposes
     if (chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['options'], ({options}) => {
+      chrome.storage.local.get(['options'], ({ options }) => {
         const { dataAttribute } = options ? options.code : {}
         if (dataAttribute) {
           this._dataAttribute = dataAttribute
@@ -103,7 +103,7 @@ export default class EventRecorder {
     try {
       const locators = locatorBuilders.buildAll(e.target)
 
-      if(!locators || locators.length===0){
+      if (!locators || locators.length === 0) {
         console.log('empty selectors')
       }
 

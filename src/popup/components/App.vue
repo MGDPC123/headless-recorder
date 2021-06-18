@@ -68,7 +68,6 @@ export default {
       return {
         recordingInJson: '',
         code: '',
-        codeForPlaywright: '',
         options: {},
         showResultsTab: false,
         showHelp: false,
@@ -140,7 +139,7 @@ export default {
           //const codeGen = new PuppeteerCodeGenerator(codeOptions)
           //const codeGenPlaywright = new PlaywrightCodeGenerator(codeOptions)
           this.code = this.dpcRecording //codeGen.generate(this.recording)
-          this.codeForPlaywright = this.dpcRecording //codeGenPlaywright.generate(this.recording)
+          //this.codeForPlaywright = this.dpcRecording //codeGenPlaywright.generate(this.recording)
           this.showResultsTab = true
           //this.storeState()
         })
@@ -156,7 +155,6 @@ export default {
       cleanUp () {
         this.recording = this.liveEvents = []
         this.code = ''
-        this.codeForPlaywright = ''
         this.showResultsTab = this.isRecording = this.isPaused = false
         this.storeState()
       },
@@ -166,7 +164,7 @@ export default {
         }
       },
       loadState (cb) {
-        this.$chrome.storage.local.get(['controls', 'code', 'options', 'codeForPlaywright'], ({ controls, code, options, codeForPlaywright }) => {
+        this.$chrome.storage.local.get(['controls', 'code', 'options'], ({ controls, code, options }) => {
           if (controls) {
             this.isRecording = controls.isRecording
             this.isPaused = controls.isPaused
@@ -174,10 +172,6 @@ export default {
 
           if (code) {
             this.code = code
-          }
-
-          if (codeForPlaywright) {
-            this.codeForPlaywright = codeForPlaywright
           }
 
           if (options) {
@@ -189,7 +183,6 @@ export default {
       storeState () {
         this.$chrome.storage.local.set({
           code: this.code,
-          codeForPlaywright: this.codeForPlaywright,
           controls: {
             isRecording: this.isRecording,
             isPaused: this.isPaused
