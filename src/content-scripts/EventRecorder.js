@@ -2,8 +2,6 @@ import eventsToRecord from '../code-generator/dom-events-to-record'
 import UIController from './UIController'
 import actions from '../models/extension-ui-actions'
 import ctrl from '../models/extension-control-messages'
-import finder from '@medv/finder'
-import xpath from 'xpath-dom'
 import LocatorBuilders from '../other/locatorBuilders'
 
 const DEFAULT_MOUSE_CURSOR = 'default'

@@ -218,7 +218,7 @@ class RecordingController {
 
   cleanUp (cb) {
     console.debug('cleanup')
-    // this._recording = []
+    this._recording = []
     chrome.browserAction.setBadgeText({ text: '' })
     chrome.storage.local.remove('recording', () => {
       console.debug('stored recording cleared')
@@ -255,9 +255,9 @@ class RecordingController {
       return
     }
 
-    if (!Array.isArray(this._recording)) {
+    /* if (!Array.isArray(this._recording)) {
       this._recording = []
-    }
+    } */
     if (msg.control) return this.handleControlMessage(msg, sender)
 
     // to account for clicks etc. we need to record the frameId and url to later target the frame in playback

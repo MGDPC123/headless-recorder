@@ -31,7 +31,7 @@
           </button>
           <a href="#" @click="showResultsTab = true" v-show="code">view code</a>
         </div>
-        <ResultsTab :puppeteer="recordingInJson" :playwright="recordingInJson" :options="options" v-if="showResultsTab" />
+        <ResultsTab :puppeteer="recordingInJson" :playwright="recordingInJson" :options="options" v-if="showResultsTab" v-on:update:tab="currentResultTab = $event"/>
 
         <div class="results-footer" v-if="showResultsTab">
           <button class="btn btn-sm btn-primary" @click="restart">Restart</button>
@@ -138,10 +138,10 @@ export default {
           this.recordingInJson=JSON.stringify(dpcRecording)
           //const codeGen = new PuppeteerCodeGenerator(codeOptions)
           //const codeGenPlaywright = new PlaywrightCodeGenerator(codeOptions)
-          this.code = this.dpcRecording //codeGen.generate(this.recording)
-          //this.codeForPlaywright = this.dpcRecording //codeGenPlaywright.generate(this.recording)
+          this.code = this.dpcRecording 
           this.showResultsTab = true
-          //this.storeState()
+          window.alert(code);
+          this.storeState()
         })
       },
       restart () {
@@ -164,10 +164,11 @@ export default {
         }
       },
       loadState (cb) {
-        this.$chrome.storage.local.get(['controls', 'code', 'options'], ({ controls, code, options }) => {
+        this.$chrome.storage.local.get(['controls', 'code', 'options', 'recordingInJson'], ({ controls, code, options, recordingInJson }) => {
           if (controls) {
             this.isRecording = controls.isRecording
             this.isPaused = controls.isPaused
+            this.recordingInJson = recordingInJson
           }
 
           if (code) {
@@ -186,7 +187,9 @@ export default {
           controls: {
             isRecording: this.isRecording,
             isPaused: this.isPaused
-          }
+          },
+          recording: this.recording,
+          recordingInJson: this.recordingInJson
         })
       },
       setCopying () {
