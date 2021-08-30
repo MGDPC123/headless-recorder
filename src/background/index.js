@@ -156,7 +156,6 @@ class RecordingController {
                 Selectors: next.selectors,
                 BrowserId: next.browserId,
                 BrowserUrl: next.href,
-                Screenshot: next.screenshot,
                 Date: next.createdAt
               }
             }
@@ -173,7 +172,6 @@ class RecordingController {
               Selectors: next.selectors.filter(sel => sel !== null),
               BrowserId: next.browserId,
               BrowserUrl: next.href,
-              Screenshot: next.screenshot,
               Date: next.createdAt
             }
           }
@@ -184,9 +182,8 @@ class RecordingController {
           Data: {
             BrowserType: platform.name,
             BrowserVersion: platform.version,
-            StartUrl: next.href,
+            BrowserUrl: next.href,
             BrowserId: next.browserId,
-            Screenshot: next.screenshot,
             Date: next.createdAt
           }
         })
